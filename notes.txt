@@ -1,0 +1,159 @@
+Method is _convert_object_with_cuda_array_interface at https://github.com/cupy/cupy/blob/57d5560b1b63ef567129fbba6908a59a4a7256fa/cupy/_core/core.pyx#L2652
+
+Called by _array_from_cuda_array_interface at: https://github.com/cupy/cupy/blob/57d5560b1b63ef567129fbba6908a59a4a7256fa/cupy/_core/core.pyx#L2347
+
+This is in core.pyx which goes into cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+
+  $ nm -a core.cpython-310-x86_64-linux-gnu.so | grep _convert_object_with_cuda_array_interface
+  0000000000045ce0 t _ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti
+  00000000000485b0 t _ZL71__pyx_pw_4cupy_5_core_4core_19_convert_object_with_cuda_array_interfaceP7_objectS0_
+  0000000000083040 d _ZL72__pyx_doc_4cupy_5_core_4core_18_convert_object_with_cuda_array_interface
+  000000000008f308 b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version
+  000000000008f2f8 b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version_0
+  000000000008f2e8 b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version_1
+  000000000008f300 b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value
+  000000000008f2f0 b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value_0
+  000000000008f2e0 b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value_1
+
+
+So which one of these functions do we want to patch?
+
+  gdb --args python which_function.py
+
+b _ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti
+y
+b _ZL71__pyx_pw_4cupy_5_core_4core_19_convert_object_with_cuda_array_interfaceP7_objectS0_
+y
+b _ZL72__pyx_doc_4cupy_5_core_4core_18_convert_object_with_cuda_array_interface
+y
+b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version
+y
+b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version_0
+y
+b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version_1
+y
+b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value
+y
+b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value_0
+y
+b _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value_1
+y
+
+Then I have:
+
+  (gdb) info breakpoints
+  Num     Type           Disp Enb Address    What
+  1       breakpoint     keep y   <PENDING>  _ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti
+  2       breakpoint     keep y   <PENDING>  _ZL71__pyx_pw_4cupy_5_core_4core_19_convert_object_with_cuda_array_interfaceP7_objectS0_
+  3       breakpoint     keep y   <PENDING>  _ZL72__pyx_doc_4cupy_5_core_4core_18_convert_object_with_cuda_array_interface
+  4       breakpoint     keep y   <PENDING>  _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version
+  5       breakpoint     keep y   <PENDING>  _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version_0
+  6       breakpoint     keep y   <PENDING>  _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE18__pyx_dict_version_1
+  7       breakpoint     keep y   <PENDING>  _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value
+  8       breakpoint     keep y   <PENDING>  _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value_0
+  9       breakpoint     keep y   <PENDING>  _ZZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objectiE23__pyx_dict_cached_value_1
+
+
+Then I get:
+
+  (gdb) run
+  Starting program: /home/gmarkall/mambaforge/envs/numbadev/bin/python which_function.py
+
+  Thread 1 "python" hit Breakpoint 1, 0x00007fff9654bce0 in __pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interface(_object*, int) ()
+     from /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+ 
+Backtrace:
+
+  #0  0x00007fff9654ebb0 in __pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interface(_object*, int) ()
+     from /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  #1  0x00007fff96571b4c in __pyx_f_4cupy_5_core_4core_array(_object*, int, __pyx_opt_args_4cupy_5_core_4core_array*) ()
+     from /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  #2  0x00007fff96575cbe in __pyx_pw_4cupy_5_core_4core_9array(_object*, _object*, _object*) ()
+     from /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  #3  0x0000555555697f4c in cfunction_call (func=<built-in method array of module object at remote 0x7fff965aeb10>, args=<optimised out>, 
+      kwargs=<optimised out>) at /usr/local/src/conda/python-3.10.4/Objects/methodobject.c:543
+  #4  0x000055555569120b in _PyObject_MakeTpCall (tstate=0x55555591de10, callable=<built-in method array of module object at remote 0x7fff965aeb10>, 
+      args=<optimised out>, nargs=<optimised out>, keywords=0x0) at /usr/local/src/conda/python-3.10.4/Objects/call.c:224
+
+(_array_from_cuda_array_interface was probably inlined into _core.core.array)
+
+The prototype is (in cupy/_core/core.cpp):
+
+  45471 static struct __pyx_obj_4cupy_5_core_4core_ndarray *__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interface(PyObject *__pyx_v_a, CYTHON_UNUSED int __pyx_skip_dispatch)
+
+There are about 4 call sites, so let's try to just modify the function itself rather than the call site.
+
+What does the function look like?
+
+$ objdump --disassemble=_ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti build/lib.linux-x86_64-3.10/cupy/_core/core.cpython-310-x86_64-linux-gnu.so | head -n 100
+
+  0000000000045bb0 <_ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti>:
+     45bb0:	41 57                	push   %r15
+     45bb2:	41 56                	push   %r14
+     45bb4:	41 55                	push   %r13
+     45bb6:	41 54                	push   %r12
+     45bb8:	55                   	push   %rbp
+     45bb9:	53                   	push   %rbx
+     45bba:	48 81 ec 88 00 00 00 	sub    $0x88,%rsp
+     45bc1:	48 8b 05 d8 71 04 00 	mov    0x471d8(%rip),%rax        # 8cda0 <_ZL64__pyx_vp_13cupy_backends_4cuda_3api_7runtime__is_hip_environment>
+     45bc8:	8b 10                	mov    (%rax),%edx
+     45bca:	85 d2                	test   %edx,%edx
+     45bcc:	0f 85 fe 08 00 00    	jne    464d0 <_ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti+0x920>
+     45bd2:	48 8b 47 08          	mov    0x8(%rdi),%rax
+  ...
+
+So let's try to patch the first instruction. How do we find it?
+
+  In [8]: cp._core.core.__pyx_capi__['_convert_object_with_cuda_array_interface']
+  Out[8]: <capsule object "struct __pyx_obj_4cupy_5_core_4core_ndarray *(PyObject *, int __pyx_skip_dispatch)" at 0x7fff9653bc90>
+
+That gives us a capsule pointing to the function:
+
+  (gdb) print *((PyCapsule*)0x7fff9653bc90)
+  $2 = {ob_base = {ob_refcnt = 2, ob_type = 0x5555558d23c0 <PyCapsule_Type>}, 
+    pointer = 0x7fff964bdbb0 <__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interface(_object*, int)>, 
+    name = 0x7fff964e8b68 "struct __pyx_obj_4cupy_5_core_4core_ndarray *(PyObject *, int __pyx_skip_dispatch)", context = 0x0, destructor = 0x0}
+  (gdb) disass 0x7fff964bdbb0
+  Dump of assembler code for function _ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti:
+     0x00007fff964bdbb0 <+0>:	push   %r15
+     0x00007fff964bdbb2 <+2>:	push   %r14
+     0x00007fff964bdbb4 <+4>:	push   %r13
+     0x00007fff964bdbb6 <+6>:	push   %r12
+     0x00007fff964bdbb8 <+8>:	push   %rbp
+     0x00007fff964bdbb9 <+9>:	push   %rbx
+
+In patch_cupy.py, we get the function pointer.
+
+Try to patch it with ud2  - segfault!
+
+Compile change_permissions.so with:
+
+  $ gcc -fPIC -shared -Wall -Werror -Wextra -pedantic change_permissions.c -o change_permissions.so
+
+
+Before change:
+
+  $ LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH python patch_cupy.py 
+  PID: 472602
+  Function is at 0x7f3bab222bb0
+
+  $ cat /proc/472602/maps  | grep cupy | grep "core.cpython"
+  7f3bab1dd000-7f3bab1ea000 r--p 00000000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab1ea000-7f3bab24b000 r-xp 0000d000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab24b000-7f3bab25b000 r--p 0006e000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab25b000-7f3bab25c000 r--p 0007d000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab25c000-7f3bab269000 rw-p 0007e000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+
+After change:
+
+  $ cat /proc/472602/maps  | grep cupy | grep "core.cpython"
+  7f3bab1dd000-7f3bab1ea000 r--p 00000000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab1ea000-7f3bab222000 r-xp 0000d000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab222000-7f3bab223000 rwxp 00045000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab223000-7f3bab24b000 r-xp 00046000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab24b000-7f3bab25b000 r--p 0006e000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab25b000-7f3bab25c000 r--p 0007d000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+  7f3bab25c000-7f3bab269000 rw-p 0007e000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+
+
+
