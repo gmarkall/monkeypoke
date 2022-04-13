@@ -156,4 +156,27 @@ After change:
   7f3bab25c000-7f3bab269000 rw-p 0007e000 103:05 24522239                  /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
 
 
+Then running it gives:
+
+  PID: 476799
+  Function is at 0x7fff9654ebb0
+
+  Result of changing address is... 0
+
+  Old value is 5741
+  Instruction patched... ?
+
+  [New Thread 0x7fff38a15700 (LWP 476828)]
+  [New Thread 0x7fff33fff700 (LWP 476829)]
+  [New Thread 0x7fff337fe700 (LWP 476830)]
+
+  Thread 1 "python" received signal SIGILL, Illegal instruction.
+  0x00007fff9654ebb0 in __pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interface(_object*, int) ()
+     from /home/gmarkall/mambaforge/envs/numbadev/lib/python3.10/site-packages/cupy/_core/core.cpython-310-x86_64-linux-gnu.so
+
+We see the illegal instruction:
+
+  Dump of assembler code for function _ZL68__pyx_f_4cupy_5_core_4core__convert_object_with_cuda_array_interfaceP7_objecti:
+  => 0x00007fff9654ebb0 <+0>:	ud2    
+
 
